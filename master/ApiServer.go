@@ -6,6 +6,8 @@ import (
 	"time"
 	"fmt"
 	"strconv"
+	"github.com/luckylgit/dscrond/common"
+	"encoding/json"
 )
 
 
@@ -18,8 +20,27 @@ var (
 	G_apiServer *ApiServer
 )
 //保存任务接口
-func handleJobSave(w http.ResponseWriter,r *http.Request){
+func handleJobSave(rsp http.ResponseWriter,req *http.Request){
     //保存任务etcd
+    var(
+    	err error
+    	jobName string
+    	job common.Job
+
+	)
+    if err = req.ParseForm();err != nil{
+    	goto ERR
+	}
+
+	jobName = req.PostForm.Get("job")
+    if err = json.Unmarshal([]byte(jobName),&job);err != nil {
+    	goto ERR
+	}
+
+    //保存到job
+
+
+	ERR:
 }
 
 

@@ -4,6 +4,8 @@ import (
 	"go.etcd.io/etcd/clientv3"
 	"time"
 	"fmt"
+	"github.com/luckylgit/dscrond/common"
+	"context"
 )
 
 //任务管理器
@@ -50,4 +52,20 @@ func InitJobMgr()(err error){
 	 return
 }
 
+//保存
+func (jmg *JobMgr) Save(job *common.Job)(err error){
+    //
+    var (
+    	op clientv3.Op
+    	opResp clientv3.OpResponse
+	)
+    op = clientv3.OpPut(job.Name,job.Command+job.CronExpr)
+	if opResp,err = jmg.kv.Do(context.TODO(),op);err != nil {
+		return
+	}
+
+	fmt.Println(opResp.Put().Header)
+
+	return
+}
 
