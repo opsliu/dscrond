@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"github.com/luckylgit/dscrond/common"
 	"context"
+	"encoding/json"
+	"go.etcd.io/etcd/mvcc/mvccpb"
 )
 
 //任务管理器
@@ -30,7 +32,7 @@ func InitJobMgr()(err error){
 	)
 	//初始化配置
 	etcdConf = clientv3.Config{
-		Endpoints:[]string{G_config.etcdCluster},
+		Endpoints:G_config.EtcdHosts,
 		DialTimeout:time.Duration(G_config.EtcdTimeout)*time.Millisecond,
         }
         //建立连接
@@ -53,19 +55,78 @@ func InitJobMgr()(err error){
 }
 
 //保存
-func (jmg *JobMgr) Save(job *common.Job)(err error){
+func (jmg *JobMgr) SaveJob(job *common.Job)(oldjob *common.Job ,err error){
     //
     var (
-    	op clientv3.Op
-    	opResp clientv3.OpResponse
+    	jobKey string
+    	jobValue []byte
+    	putResp *clientv3.PutResponse
+    	oldJobObj common.Job
 	)
-    op = clientv3.OpPut(job.Name,job.Command+job.CronExpr)
-	if opResp,err = jmg.kv.Do(context.TODO(),op);err != nil {
+    jobKey = common.JOB_SAVE_DIR+job.Name
+    if jobValue,err = json.Marshal(*job);err != nil {
+    	return
+	}
+	//保存etcd
+	if putResp,err = jmg.kv.Put(context.TODO(),jobKey,string(jobValue),clientv3.WithPrevKV());err != nil {
 		return
 	}
-
-	fmt.Println(opResp.Put().Header)
-
+    //如果是更新返回旧值
+    if putResp.PrevKv != nil {
+    	if err = json.Unmarshal(putResp.PrevKv.Value,&oldJobObj);err != nil {
+    		err = nil
+			return
+		}
+		oldjob = &oldJobObj
+	}
 	return
 }
 
+//删除job
+func (jmg *JobMgr) DeleteJob(name string)(oldJob *common.Job,err error){
+	var (
+		jobKey string
+		delResp *clientv3.DeleteResponse
+		oldJobObj common.Job
+	)
+
+	jobKey = common.JOB_SAVE_DIR+name
+	if delResp,err = jmg.kv.Delete(context.TODO(),jobKey,clientv3.WithPrevKV());err != nil {
+		return
+	}
+	//删除之后返回旧值
+	if len(delResp.PrevKvs) != 0 {
+		if err = json.Unmarshal(delResp.PrevKvs[0].Value,&oldJobObj);err != nil {
+			err = nil
+			return
+		}
+		oldJob = &oldJobObj
+	}
+	return
+}
+//列出所有
+func (jmg *JobMgr) ListJobs()(jobList []*common.Job,err error){
+    var (
+    	dirKey string
+		getListResp *clientv3.GetResponse
+		keyValuePair *mvccpb.KeyValue
+		job *common.Job
+	)
+    dirKey = common.JOB_SAVE_DIR
+    if getListResp,err = jmg.kv.Get(context.TODO(),dirKey,clientv3.WithPrefix());err != nil {
+		return
+	}
+	fmt.Println(getListResp)
+	jobList = make([]*common.Job,0)
+	for _,keyValuePair =range  getListResp.Kvs{
+		job = &common.Job{}
+		if err = json.Unmarshal(keyValuePair.Value,job);err != nil {
+			fmt.Println(err)
+         	err = nil
+         	continue
+        }
+        fmt.Println(job)
+		jobList = append(jobList,job)
+	}
+	return
+}

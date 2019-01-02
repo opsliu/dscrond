@@ -24,26 +24,94 @@ func handleJobSave(rsp http.ResponseWriter,req *http.Request){
     //保存任务etcd
     var(
     	err error
-    	jobName string
+    	postJob string
     	job common.Job
+		oldJob *common.Job
+		bytes []byte
 
 	)
+
     if err = req.ParseForm();err != nil{
     	goto ERR
 	}
-
-	jobName = req.PostForm.Get("job")
-    if err = json.Unmarshal([]byte(jobName),&job);err != nil {
+	postJob = req.PostForm.Get("job")
+    if err = json.Unmarshal([]byte(postJob),&job);err != nil {
     	goto ERR
 	}
 
     //保存到job
+    if  oldJob,err = G_jobMgr.SaveJob(&job);err != nil {
+		goto ERR
+	}
+    //正常的应答返回({"errno:"0","msg";"","data":"json"})
+	if bytes,err = common.BuildResp(0,"sucess",oldJob);err == nil {
+		rsp.Write(bytes)
+	}
 
-
+    return
 	ERR:
+
+	//异常
+	if bytes,err = common.BuildResp(-1,err.Error(),nil);err == nil {
+			rsp.Write(bytes)
+	}
 }
 
 
+//删除任务(post:{name:job}
+func handleJobDelete(rsp http.ResponseWriter,req *http.Request){
+    var (
+    	err error
+    	oldJob *common.Job
+    	name string
+		bytes []byte
+	)
+    if err = req.ParseForm();err != nil {
+    	goto ERR
+	}
+
+	name = req.PostForm.Get("name")
+    if oldJob,err = G_jobMgr.DeleteJob(name);err != nil {
+    	goto ERR
+	}
+	//正常的删除应答返回({"errno:"0","msg";"","data":"json"})
+	if bytes,err = common.BuildResp(0,"sucess",oldJob);err == nil {
+		rsp.Write(bytes)
+	}
+
+	return
+	ERR:
+
+	//异常
+	if bytes,err = common.BuildResp(-1,err.Error(),nil);err == nil {
+		rsp.Write(bytes)
+	}
+}
+
+//列出所有任务
+func handleJobList(rsp http.ResponseWriter,req *http.Request){
+   var (
+   	err error
+   	jobLists []*common.Job
+   	bytes []byte
+   )
+
+   if jobLists,err = G_jobMgr.ListJobs();err != nil {
+   	  goto ERR
+   }
+	//正常的查询任务列表应答返回({"errno:"0","msg";"","data":"json"})
+	if bytes,err = common.BuildResp(0,"sucess",jobLists);err == nil {
+		rsp.Write(bytes)
+	}
+   return
+
+   ERR:
+   //异常
+	if bytes,err = common.BuildResp(-1,err.Error(),nil);err == nil {
+		   rsp.Write(bytes)
+	 }
+
+}
 //初始化api服务
 func InitApiServer()(err error){
 	var (
@@ -60,6 +128,8 @@ func InitApiServer()(err error){
 	//定义接口路由
 	mux = http.NewServeMux()
 	mux.HandleFunc("/jobs/save",handleJobSave)
+	mux.HandleFunc("/jobs/delete",handleJobDelete)
+	mux.HandleFunc("/jobs/list",handleJobList)
 
 
 	//启动监听

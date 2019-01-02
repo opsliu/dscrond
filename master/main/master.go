@@ -5,6 +5,7 @@ import (
 	"github.com/luckylgit/dscrond/master"
 	"fmt"
 	"flag"
+	"time"
 )
 
 var (
@@ -38,6 +39,10 @@ func main(){
 	//启动apiHttp服务
 	if err = master.InitApiServer();err !=nil{
 		goto ERR
+	}
+
+	for {
+		time.Sleep(1 *time.Second)
 	}
 	return //正常退出
 ERR:

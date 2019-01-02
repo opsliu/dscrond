@@ -10,7 +10,7 @@
   "apiWriteTimeout":5000,
 
   "ETCD集群地址":"ETCD地址填写多个",
-  "etcdCluster":["10.5.10.209:2379"],
+  "etcdHosts":["10.5.10.209:2379"],
   "etcdTimeout":5000,
 
   "MONGODB服务器地址":"MONGODB服务器地址",

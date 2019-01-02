@@ -10,13 +10,8 @@ type Config struct {
 	ApiHost string 			`json:"apiHost"`
 	ApiReadTimeout int 		`json:"apiReadTimeout"`
 	ApiWriteTimeout int 	`json:"apiWriteTimeout"`
-
-	etcdCluster string 		`json:"etcdCluster"`
+	EtcdHosts []string 		`json:"etcdHosts"`
     EtcdTimeout int         `json:"etcdTimeout"`
-
-	MongodbHost string 		`json:"mongodbHost"`
-	MongodbPort int 		`json:"mongodbPort"`
-
 }
 
 var (
@@ -61,7 +56,6 @@ func InitConfig(path string)(err error){
 	  if err = confPrase.Load(path,&conf);err != nil {
 	  	return
 	  }
-
 	  G_config = &conf
 	  return
 }
