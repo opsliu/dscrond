@@ -15,5 +15,8 @@
 
   "MONGODB服务器地址":"MONGODB服务器地址",
   "mongoHost":"10.5.10.209",
-  "mongoPort":27017
+  "mongoPort":27017,
+
+  "静态文件路径:":"静态文件路径",
+  "staticDir":"./master/main/web"
 }

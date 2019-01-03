@@ -112,6 +112,34 @@ func handleJobList(rsp http.ResponseWriter,req *http.Request){
 	 }
 
 }
+
+//添加杀死任务
+func handleJobKill(rsp http.ResponseWriter,req *http.Request){
+	var (
+		jobName string
+		err error
+		bytes []byte
+	)
+	if err = req.ParseForm();err != nil {
+		goto ERR
+	}
+	jobName = req.PostForm.Get("name")
+	if err = G_jobMgr.KillJob(jobName);err != nil {
+		goto ERR
+	}
+	//正常kill
+	if bytes,err = common.BuildResp(0,"sucess","");err == nil {
+		rsp.Write(bytes)
+	}
+	return
+	ERR:
+
+	//添加杀死任务失败
+	if bytes,err = common.BuildResp(-1,err.Error(),"");err == nil {
+		rsp.Write(bytes)
+	}
+	return
+}
 //初始化api服务
 func InitApiServer()(err error){
 	var (
@@ -119,6 +147,8 @@ func InitApiServer()(err error){
 		listener net.Listener
 		httpServer *http.Server
 		address string
+		staticDir http.Dir
+		staticHandler http.Handler
 	)
 	//读取配置文件初始化接口
 	//if conf,err = InitConfig();err != nil {
@@ -130,6 +160,12 @@ func InitApiServer()(err error){
 	mux.HandleFunc("/jobs/save",handleJobSave)
 	mux.HandleFunc("/jobs/delete",handleJobDelete)
 	mux.HandleFunc("/jobs/list",handleJobList)
+	mux.HandleFunc("/jobs/kill",handleJobKill)
+
+    //静态页面
+    staticDir = http.Dir(G_config.StaticDir)
+	staticHandler =http.FileServer(staticDir)
+    mux.Handle("/",http.StripPrefix("/",staticHandler))
 
 
 	//启动监听

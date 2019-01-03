@@ -12,6 +12,7 @@ type Config struct {
 	ApiWriteTimeout int 	`json:"apiWriteTimeout"`
 	EtcdHosts []string 		`json:"etcdHosts"`
     EtcdTimeout int         `json:"etcdTimeout"`
+    StaticDir string        `json:"staticDir"`
 }
 
 var (

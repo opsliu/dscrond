@@ -116,6 +116,7 @@ func (jmg *JobMgr) ListJobs()(jobList []*common.Job,err error){
     if getListResp,err = jmg.kv.Get(context.TODO(),dirKey,clientv3.WithPrefix());err != nil {
 		return
 	}
+
 	fmt.Println(getListResp)
 	jobList = make([]*common.Job,0)
 	for _,keyValuePair =range  getListResp.Kvs{
@@ -125,8 +126,28 @@ func (jmg *JobMgr) ListJobs()(jobList []*common.Job,err error){
          	err = nil
          	continue
         }
-        fmt.Println(job)
 		jobList = append(jobList,job)
+	}
+	return
+}
+
+//杀死任务
+//向/cron/killer/添加杀死的任务
+func (jmg *JobMgr) KillJob(name string)(err error){
+    var (
+    	//KillResp *clientv3.PutResponse
+    	jobKey string
+    	jobVal string
+    	lease *clientv3.LeaseGrantResponse
+	)
+    jobKey = common.JOB_KILL_DIR + name
+	jobVal = name
+	if lease,err = jmg.lease.Grant(context.TODO(),1);err != nil {
+		return
+	}
+
+    if _,err = jmg.kv.Put(context.TODO(),jobKey,jobVal,clientv3.WithLease(lease.ID));err != nil {
+    	return
 	}
 	return
 }
