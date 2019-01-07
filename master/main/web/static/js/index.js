@@ -1,5 +1,22 @@
-/*获取列表*/
 //编辑任务
+function newJob(event) {
+    $('#edit-name').val("")
+    $('#edit-cmd').val("")
+    $('#edit-cronExpr').val("")
+    $('#edit-name').removeAttr("readonly")
+}
+function saveJob(event) {
+    var jobInfo = {name:$('#edit-name').val(),command:$('#edit-cmd').val(),cronExpr:$('#edit-cronExpr').val()}
+    $.ajax({
+        url:'/jobs/save',
+        dataType:'json',
+        method:'post',
+        data:{job:JSON.stringify(jobInfo)},
+        complete:function (msg) {
+            window.location.reload()
+        },
+    })
+}
 function editJob(event){
    var jobName = $(this).parents('tr').children('.job-name').text()
    var jobCommand = $(this).parents('tr').children('.job-cmd').text()
@@ -7,6 +24,7 @@ function editJob(event){
    $('#edit-name').val(jobName)
    $('#edit-cmd').val(jobCommand)
    $('#edit-cronExpr').val(jobCronExpr)
+
 }
 
 //删除任务
@@ -41,6 +59,8 @@ $(document).ready(function () {
     $("#job-list").on("click",".edit-job",editJob)
     $("#job-list").on("click",".delete-job",deleteJob)
     $("#job-list").on("click",".kill-job",killJob)
+    $('#saveJobBtn').on("click",saveJob)
+    $('#saveJobForm').on("click",newJob)
 
     function rebuildJobList() {
         $.ajax({

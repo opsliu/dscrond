@@ -117,7 +117,6 @@ func (jmg *JobMgr) ListJobs()(jobList []*common.Job,err error){
 		return
 	}
 
-	fmt.Println(getListResp)
 	jobList = make([]*common.Job,0)
 	for _,keyValuePair =range  getListResp.Kvs{
 		job = &common.Job{}
