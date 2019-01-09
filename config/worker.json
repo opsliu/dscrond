@@ -1,14 +1,4 @@
 {
-  "API接口端口": "提供任务增删改查服务",
-  "apiPort":8070,
-  "apiHost":"0.0.0.0",
-
-  "API接口超时":"单位为毫秒",
-  "apiReadTimeout":5000,
-
-  "API接口写超时":"单位为毫秒",
-  "apiWriteTimeout":5000,
-
   "ETCD集群地址":"ETCD地址填写多个",
   "etcdHosts":["10.5.10.209:2379"],
   "etcdTimeout":5000,

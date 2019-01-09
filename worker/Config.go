@@ -6,10 +6,6 @@ import (
 )
 
 type Config struct {
-	ApiPort int 			`json:"apiPort"`
-	ApiHost string 			`json:"apiHost"`
-	ApiReadTimeout int 		`json:"apiReadTimeout"`
-	ApiWriteTimeout int 	`json:"apiWriteTimeout"`
 	EtcdHosts []string 		`json:"etcdHosts"`
     EtcdTimeout int         `json:"etcdTimeout"`
     StaticDir string        `json:"staticDir"`

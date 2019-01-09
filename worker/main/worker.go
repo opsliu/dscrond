@@ -31,6 +31,10 @@ func main(){
 	}
 	//开始初始化线程
 	initEnv()
+	//初始化任务管理器
+	if err = worker.InitJobMgr();err != nil {
+		goto ERR
+	}
 
 	//从etcd获取任务
 
