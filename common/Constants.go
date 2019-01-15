@@ -8,4 +8,6 @@ const (
 	//保存任务事件
 	JOB_EVNET_SAVE = 1
 	JOB_EVENT_DELETE = -1
+
+   JOB_LOCK_DIR = "/cron/lock/"
 )

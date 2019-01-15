@@ -4,6 +4,7 @@ function newJob(event) {
     $('#edit-cmd').val("")
     $('#edit-cronExpr').val("")
     $('#edit-name').removeAttr("readonly")
+
 }
 function saveJob(event) {
     var jobInfo = {name:$('#edit-name').val(),command:$('#edit-cmd').val(),cronExpr:$('#edit-cronExpr').val()}
@@ -60,7 +61,7 @@ $(document).ready(function () {
     $("#job-list").on("click",".delete-job",deleteJob)
     $("#job-list").on("click",".kill-job",killJob)
     $('#saveJobBtn').on("click",saveJob)
-    $('#saveJobForm').on("click",newJob)
+    $('#newJobForm').on("click",newJob)
 
     function rebuildJobList() {
         $.ajax({

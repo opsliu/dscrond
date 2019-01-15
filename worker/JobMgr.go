@@ -7,7 +7,6 @@ import (
 	"context"
 	"github.com/luckylgit/dscrond/common"
 	"go.etcd.io/etcd/mvcc/mvccpb"
-	"encoding/json"
 )
 
 //任务管理器
@@ -79,11 +78,16 @@ func (jmg *JobMgr) watchJobs()(err error){
 		return
 	}
 	for _,kvpair =range getResp.Kvs{
-         if err = json.Unmarshal(kvpair.Value,&job);err == nil {
-             //推送当前任务到scheduler
-			 jobEvent = common.BuildJobEvent(common.JOB_EVNET_SAVE,job)
-			 G_scheduler.PushSchedulerEvent(jobEvent) //推送event
-		 }
+		if job,err  = common.UnpackJob(kvpair.Value);err == nil {
+			jobEvent = common.BuildJobEvent(common.JOB_EVNET_SAVE,job)
+			G_scheduler.PushSchedulerEvent(jobEvent) //推送event
+		}
+		continue
+		 //if err = json.Unmarshal(kvpair.Value,&job);err == nil {
+          //   //推送当前任务到scheduler
+			// jobEvent = common.BuildJobEvent(common.JOB_EVNET_SAVE,job)
+			// G_scheduler.PushSchedulerEvent(jobEvent) //推送event
+		 //}
 	}
 	//从该revision向后监听变化
 	go func() {
@@ -125,4 +129,11 @@ func (jmg *JobMgr) watchJobs()(err error){
 		}
 	}()
 	return
+}
+
+//创建任务执行锁
+func (jmg *JobMgr) CreateLock(jobName string)(jobLock *JobLock) {
+    //返回锁
+    jobLock = InitJobLock(jobName,jmg.kv,jmg.lease)
+    return
 }

@@ -8,7 +8,6 @@ import (
 type Config struct {
 	EtcdHosts []string 		`json:"etcdHosts"`
     EtcdTimeout int         `json:"etcdTimeout"`
-    StaticDir string        `json:"staticDir"`
 }
 
 var (

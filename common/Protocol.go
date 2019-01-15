@@ -32,6 +32,23 @@ type JobSchedulerPlan struct {
 	NextTime time.Time           //下次的执行时间
 }
 
+//任务执行状态
+type JobExcuteInfo struct {
+   Job *Job
+   PlanTime time.Time //计划开始时间
+   RealTime time.Time //实际开始时间
+}
+
+//任务执行结果
+type JobExcuteResult struct {
+	ExcuteInfo *JobExcuteInfo  //任务本身相关信息
+	Output []byte  //正常结果的输出
+	Err error //脚本错误的输出
+	StartTime time.Time
+	EndTime time.Time
+}
+
+
 func BuildResp(errno int,msg string,data interface{})(resp []byte,err error ){
     var (
     	response Response
@@ -49,7 +66,7 @@ func BuildResp(errno int,msg string,data interface{})(resp []byte,err error ){
 func UnpackJob(v []byte)(ret *Job,err error){
      var job *Job
      job = &Job{}
-	if err = json.Unmarshal(v,&ret);err != nil {
+	if err = json.Unmarshal(v,&job);err != nil {
 		return
 	}
 	ret = job
@@ -64,7 +81,6 @@ func ExtractJobName(jobKey string) (string){
 
 //定义event任务变化事件update delete
 func BuildJobEvent(eventType int,job *Job)(jobEvent *JobEvent){
-
 	return &JobEvent{
 		EventType:eventType,
 		Job:job,
@@ -89,4 +105,21 @@ func BuildJobSchedulerPlan(job *Job) (jobSchedulerPlan *JobSchedulerPlan,err err
 		NextTime:expr.Next(time.Now()),
 	}
     return
+}
+
+func BuildJobExcuteInfo(jobSchedulerPlan *JobSchedulerPlan) (jobExcuteInfo *JobExcuteInfo) {
+	return &JobExcuteInfo{
+		Job: jobSchedulerPlan.Job,
+		PlanTime:jobSchedulerPlan.NextTime,
+		RealTime: time.Now(),//真实执行的时间
+	}
+}
+
+
+func BuildJobExecuteResult(jobExcuteInfo *JobExcuteInfo,cmdOutput []byte,err error)(jobExcuteResult *JobExcuteResult){
+	return &JobExcuteResult{
+		ExcuteInfo:jobExcuteInfo,
+		Output:cmdOutput,
+		Err:err,
+	}
 }
