@@ -2,8 +2,9 @@ package main
 
 import (
 	"fmt"
+	"math/rand"
 )
 
 func main(){
-	fmt.Println(!true)
+	fmt.Println(rand.Float32())
 }

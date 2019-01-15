@@ -18,14 +18,20 @@ type JobLock struct {
 var (
 	G_jobLock *JobLock
 )
+
+
 //初始化一把锁
 func InitJobLock(jobName string,kv clientv3.KV,lease clientv3.Lease) (jobLock *JobLock){
-	G_jobLock = &JobLock{
+	G_jobLock =  &JobLock{
 		kv:kv,
 		lease:lease,
 		jobName:jobName,
 	}
-	return
+	return &JobLock{
+		kv:kv,
+		lease:lease,
+		jobName:jobName,
+	}
 }
 
 //乐观尝试上锁

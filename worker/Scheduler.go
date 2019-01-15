@@ -80,6 +80,7 @@ func (sch *Scheduler) SchedulerLoop(){
     	case jobExcuteRes = <- sch.jobExcuteResultChan: //从结果chan中取出结果
     	     sch.handlerJobResult(jobExcuteRes)
 		}
+
 		schedulerAfter = sch.TryScheduler()
 		schedulerTimer.Reset(schedulerAfter) //重置定时器
 	}
@@ -92,6 +93,8 @@ func (sch *Scheduler) handlerJobEvent(jobEvent *common.JobEvent) {
 		jobSchedulerPlan *common.JobSchedulerPlan
 		err error
         jobExist bool
+        jobExecutingInfo *common.JobExcuteInfo
+        jobExecuting bool
 	)
 	switch jobEvent.EventType {
 	case common.JOB_EVNET_SAVE:
@@ -103,6 +106,13 @@ func (sch *Scheduler) handlerJobEvent(jobEvent *common.JobEvent) {
 		if jobSchedulerPlan,jobExist = sch.jobPlanTable[jobEvent.Job.Name];jobExist{
 			delete(sch.jobPlanTable,jobEvent.Job.Name) //如果存在就删除掉
 		}
+	case common.JOB_ENENT_KILL:
+		//TODO:杀死任务,取消command执行
+        //判断任务是否在执行中
+        if jobExecutingInfo,jobExecuting = sch.jobExcutingTable[jobEvent.Job.Name];jobExecuting {
+        	jobExecutingInfo.CancelFunc() //触发command杀死任务退出
+		}
+
 	}
 }
 //推送任务事件
@@ -113,13 +123,17 @@ func (sch *Scheduler) PushSchedulerEvent(jobEvent *common.JobEvent){
 //处理回传的结果
 func (sch *Scheduler) handlerJobResult(jobExcuteRes *common.JobExcuteResult){
     //删除执行状态
-    delete(sch.jobExcutingTable,jobExcuteRes.ExcuteInfo.Job.Name) //从任务执行表中删除任务因为赢执行完成
-    fmt.Println("任务执行完成:",string(jobExcuteRes.ExcuteInfo.Job.Name),string(jobExcuteRes.Output),jobExcuteRes.Err)
+    fmt.Println("执行结果:",jobExcuteRes.ExcuteInfo.Job.Name,jobExcuteRes.Err)
+    delete(sch.jobExcutingTable,jobExcuteRes.ExcuteInfo.Job.Name) //从任务执行表中删除任务因为执行完成
 }
+
+
 //推送执行结果到结果chan
 func (sch *Scheduler) PushJobExcuteResult(jobRes *common.JobExcuteResult) {
    sch.jobExcuteResultChan <- jobRes
 }
+
+
 //初始化调度器
 func InitScheduler()(err error){
 	G_scheduler = &Scheduler{
@@ -143,7 +157,6 @@ func (sch *Scheduler) TryStartJob(jobPlan *common.JobSchedulerPlan) {
 
    //如果任务正在执行 跳过本次执行
    if jobExcuteInfo,jobExcuting = sch.jobExcutingTable[jobPlan.Job.Name];jobExcuting {
-   	   fmt.Println("此任务上次调度正在执行,跳过本次执行:",jobExcuteInfo.Job.Name)
        return
    }
 
@@ -155,7 +168,6 @@ func (sch *Scheduler) TryStartJob(jobPlan *common.JobSchedulerPlan) {
 
 	//执行任务
 	//TODO: 执行任务
-	fmt.Println("执行任务:",jobExcuteInfo.Job.Name,jobExcuteInfo.RealTime,jobExcuteInfo.PlanTime)
 	G_excutor.ExcuteJob(jobExcuteInfo)
 
 }

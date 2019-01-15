@@ -57,6 +57,9 @@ func InitJobMgr()(err error){
 
 	 //启动watchJobs
 	 G_jobMgr.watchJobs()
+
+     //监听杀死任务
+     G_jobMgr.watchKiller()
 	 return
 }
 
@@ -102,7 +105,7 @@ func (jmg *JobMgr) watchJobs()(err error){
 			//返回的watchResp为多个返回事件
             for _,watchEvent = range watchResp.Events {
 				switch watchEvent.Type {
-				case mvccpb.PUT: //保存任务
+				case mvccpb.PUT: //杀死任务
 				     if job,err = common.UnpackJob(watchEvent.Kv.Value);err != nil {
 				     	//反解任务失败忽略
 				     	continue
@@ -131,6 +134,46 @@ func (jmg *JobMgr) watchJobs()(err error){
 	return
 }
 
+//杀死执行中的任务
+func (jmg *JobMgr) watchKiller()(err error){
+    //监听/cron/killer/目录
+    var (
+		watchStartRevision int64
+		watchChan clientv3.WatchChan
+		watchResp clientv3.WatchResponse
+		watchEvent *clientv3.Event
+		job *common.Job
+		jobEvent *common.JobEvent
+		jobName string
+	)
+	go func() {
+		watchChan = jmg.watcher.Watch(context.TODO(),
+			common.JOB_KILL_DIR,clientv3.WithRev(watchStartRevision),
+			clientv3.WithPrefix())
+
+		for watchResp = range watchChan {
+
+			//返回的watchResp为多个返回事件
+			for _,watchEvent = range watchResp.Events {
+				switch watchEvent.Type {
+				case mvccpb.PUT: //保存任务
+
+					jobName = common.ExtractKillerJobName(string(watchEvent.Kv.Key))
+					job = &common.Job{
+						Name:jobName,
+					}
+					jobEvent = common.BuildJobEvent(common.JOB_ENENT_KILL,job)
+					//推送给调度器
+					G_scheduler.PushSchedulerEvent(jobEvent)
+				case mvccpb.DELETE: //kill过期自动删除
+
+
+				}
+			}
+		}
+	}()
+	return
+}
 //创建任务执行锁
 func (jmg *JobMgr) CreateLock(jobName string)(jobLock *JobLock) {
     //返回锁
